@@ -1,0 +1,7 @@
+torch == 2.1.0
+tqdm == 4.64.0
+numpy == 1.23.2
+pandas == 1.5.3
+yarm==0.2.2
+gensim==4.3.2
+scipy ==1.8.1

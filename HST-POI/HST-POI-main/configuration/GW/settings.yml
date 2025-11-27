@@ -1,0 +1,20 @@
+Adam_optimizer:
+  initial_lr: 0.01
+  weight_decay: 1.0e-06
+Dataset:
+  num_locations: 41994
+  num_users: 6726
+  sequence_length: 20
+Embedding:
+  base_dim: 16
+  num_heads: 4
+  window_size: 5
+Encoder:
+  encoder_type: trans
+Model:
+  use_graph_net: 1
+  at_type: none
+  batch_size: 256
+  epoch: 70
+  seed: 256
+  test_epoch: 70
