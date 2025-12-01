@@ -1,6 +1,12 @@
 # HST-POI
 HST-POI
 
+### Requirements
+To run this model, ensure you have Python 3.9 installed.
+```shell
+pip install -r requirement.txt
+```
+
 ## Running
 ```
 python ./model/run.py --dataset GW --dim 8
