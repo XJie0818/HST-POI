@@ -1,5 +1,5 @@
 # HST-POI
-HST-POI
+HST-POI: Joint Hypergraph and Phased Spatio-Temporal Learning for Next POI Recommendation
 
 ### Requirements
 To run this model, ensure you have Python 3.9 installed.
