@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # 数据集路径
-dataset_path = '/home/xrj/HST-POI/HST-POI-main/data/MP'
+dataset_path = '/home/xrj/HST-POI/HST-POI-main/data/TC'
 data_filename = 'train.csv'
 
 # 加载映射字典
@@ -288,11 +288,17 @@ final_pre_emb1 = torch.mean(torch.stack(final_pre_emb1), dim=0)  # 取均值
 final_user_emb1 = torch.sparse.mm(HG_up_tensor, final_pre_emb1)
 # print(final_user_emb1.shape)
 
+hg_emb_all = final_user_emb
+trans_emb_all = final_user_emb1
+
+hg_emb_all = F.normalize(hg_emb_all, p=2, dim=1)
+trans_emb_all = F.normalize(trans_emb_all, p=2, dim=1)
+
 Hyper_gate = nn.Sequential(nn.Linear(up_dim, 1), nn.Sigmoid())  # 门控机制
 Trans_gate = nn.Sequential(nn.Linear(up_dim, 1), nn.Sigmoid())
 
 
-embedding_result = Hyper_gate(final_user_emb) * final_user_emb + Trans_gate(final_user_emb1) * final_user_emb1  # 自适应融合
+embedding_result = Hyper_gate(hg_emb_all) * hg_emb_all + Trans_gate(trans_emb_all) * trans_emb_all  # 自适应融合
 # embedding_result = Hyper_gate(final_pre_emb) * final_pre_emb + Trans_gate(final_pre_emb1) * final_pre_emb1  # 自适应融合
 print(embedding_result)
 print(embedding_result.shape)

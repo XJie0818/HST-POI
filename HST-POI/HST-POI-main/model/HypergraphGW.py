@@ -202,7 +202,7 @@ Deg_H_totalrev = get_hyper_deg(H_totalrev)
 HG_totalrev = Deg_H_totalrev * H_totalrev
 
 # device = torch.device('cuda')
-up_dim = 128
+up_dim = 200
 poi_emb = nn.Embedding(num_pois, up_dim)  # POI嵌入
 nn.init.xavier_uniform_(poi_emb.weight)
 poi_emb_matrix = poi_emb.weight.data
@@ -424,6 +424,10 @@ hg_emb_all = final_user_emb4
 trans_emb_all = final_user_emb1
 geo_emb_all = final_user_emb2
 
+hg_emb_all = F.normalize(hg_emb_all, p=2, dim=1)
+trans_emb_all = F.normalize(trans_emb_all, p=2, dim=1)
+geo_emb_all = F.normalize(geo_emb_all, p=2, dim=1)
+
 
 Hyper_gate = nn.Sequential(nn.Linear(up_dim, 1), nn.Sigmoid())  # 门控机制
 Trans_gate = nn.Sequential(nn.Linear(up_dim, 1), nn.Sigmoid())
@@ -435,6 +439,7 @@ Total_gate = nn.Sequential(nn.Linear(up_dim, 1), nn.Sigmoid())
 # 综合超图换用户-poi超图
 embedding_result = Total_gate(hg_emb_all) * hg_emb_all + Trans_gate(trans_emb_all) * trans_emb_all + \
                    Geo_gate(geo_emb_all) * geo_emb_all   # 自适应融合
+# embedding_result = Total_gate(hg_emb_all) * hg_emb_all + Trans_gate(trans_emb_all) * trans_emb_all
 print(embedding_result)
 print(embedding_result.shape)
 
