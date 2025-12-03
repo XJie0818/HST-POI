@@ -8,7 +8,14 @@ pip install -r requirement.txt
 ```
 
 ## Running
-To train our model with default hyperparameters：
+To run experiments on the Gowalla dataset, you must first generate the required graph structures:
+
+1：Friendship Hypergraph: Run friend2id.py followed by friendgraph.py.
+
+2：Geometric Graph: Run location2id.py followed by geoadj.py.
+
+
+After generating both graphs, you can train the model with default hyperparameters using:
 ```
 python ./model/run.py --dataset GW --dim 8
 python ./model/run.py --dataset MP --dim 8
