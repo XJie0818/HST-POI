@@ -8,7 +8,7 @@ pip install -r requirement.txt
 ```
 
 ## Running
-To run experiments on the Gowalla dataset, you must first generate the required graph structures:
+To run experiments on the Gowalla dataset, you must first generate the required hypergraph structure:
 
 Friendship Hypergraph: Run friend2id.py followed by friendgraph.py.
 
