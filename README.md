@@ -10,9 +10,7 @@ pip install -r requirement.txt
 ## Running
 To run experiments on the Gowalla dataset, you must first generate the required graph structures:
 
-1：Friendship Hypergraph: Run friend2id.py followed by friendgraph.py.
-
-2：Geometric Graph: Run location2id.py followed by geoadj.py.
+Friendship Hypergraph: Run friend2id.py followed by friendgraph.py.
 
 
 After generating both graphs, you can train the model with default hyperparameters using:
