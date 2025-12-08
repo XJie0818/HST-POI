@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 # 数据集路径
-dataset_path = '/home/xrj/HST-POI/HST-POI-main/data/TC'
+dataset_path = '/home/xrj/HST-POI/HST-POI-main/data/MP'
 data_filename = 'train.csv'
 
 # 加载映射字典
@@ -53,18 +53,6 @@ user_trajectories_sequences = {user_id: [poi for poi, _ in records] for user_id,
 print(len(user_trajectories_sequences))
 
 
-def gen_sparse_H_user(sessions_dict, num_pois, num_users):
-    H = np.zeros(shape=(num_pois, num_users))
-
-    for userID, seq in sessions_dict.items():
-        for poi in seq:
-            H[poi, userID] += 1
-
-    H = sp.csr_matrix(H)
-
-    return H
-
-
 def gen_sparse_H_user_freq(sessions_dict, num_pois, num_users):
     rows, cols, data = [], [], []
 
@@ -82,18 +70,6 @@ def gen_sparse_H_user_freq(sessions_dict, num_pois, num_users):
             data.append(count / seq_len)  # 访问频率
 
     H = sp.csr_matrix((data, (rows, cols)), shape=(num_pois, num_users))
-    return H
-
-
-def gen_sparse_directed_H_poi(users_trajs_dict, num_pois):
-    H = np.zeros(shape=(num_pois, num_pois))
-    for userID, traj in users_trajs_dict.items():
-        for src_idx in range(len(traj) - 1):
-            src_poi = traj[src_idx]
-            tar_poi = traj[src_idx + 1]
-            H[src_poi, tar_poi] = 1
-    H = sp.csr_matrix(H)
-
     return H
 
 
@@ -299,7 +275,7 @@ Trans_gate = nn.Sequential(nn.Linear(up_dim, 1), nn.Sigmoid())
 
 
 embedding_result = Hyper_gate(hg_emb_all) * hg_emb_all + Trans_gate(trans_emb_all) * trans_emb_all  # 自适应融合
-# embedding_result = Hyper_gate(final_pre_emb) * final_pre_emb + Trans_gate(final_pre_emb1) * final_pre_emb1  # 自适应融合
+
 print(embedding_result)
 print(embedding_result.shape)
 

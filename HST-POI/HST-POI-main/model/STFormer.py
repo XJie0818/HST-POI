@@ -5,42 +5,55 @@ from torch.nn import MultiheadAttention
 from torch.nn import init
 
 
-class LocalWindowAttention(nn.Module):  # 窗口注意力
+class LocalWindowAttention(nn.Module):
     def __init__(self, config):
-        super(LocalWindowAttention, self).__init__()
-        self.config = config
+        super().__init__()
         embed_dim = config.Embedding.base_dim
         num_heads = config.Embedding.num_heads
         window_size = config.Embedding.window_size
-        self.mha = MultiheadAttention(embed_dim, num_heads)
+
+        self.mha = nn.MultiheadAttention(
+            embed_dim=embed_dim,
+            num_heads=num_heads,
+            batch_first=True,
+            dropout=0.1
+        )
         self.window_size = window_size
 
     def forward(self, x):
-        # x: [batch_size, seq_len, embed_dim]
-        batch_size, seq_len, embed_dim = x.size()
-        window_size = self.window_size
+        batch_size, seq_len, embed_dim = x.shape
 
-        # Pad the sequence to ensure it can be divided into windows
-        pad_size = (window_size - (seq_len % window_size)) % window_size
-        x = F.pad(x, (0, 0, 0, pad_size))  # Pad along the sequence dimension
+        # 1. 填充
+        pad_size = (self.window_size - seq_len % self.window_size) % self.window_size
+        if pad_size > 0:
+            x = F.pad(x, (0, 0, 0, pad_size))
+
         padded_seq_len = x.size(1)
+        num_windows = padded_seq_len // self.window_size
 
-        # Reshape to [batch_size, num_windows, window_size, embed_dim]
-        x = x.view(batch_size, -1, window_size, embed_dim)
+        # 2. 重塑为窗口 [batch_size * num_windows, window_size, embed_dim]
+        x_windowed = x.reshape(batch_size * num_windows, self.window_size, embed_dim)
 
-        # Reshape to [batch_size * num_windows, window_size, embed_dim]
-        batched_x = x.contiguous().view(batch_size * x.size(1), window_size, embed_dim)
+        # 3. 创建因果掩码（防止信息泄露）
+        mask = torch.triu(
+            torch.ones(self.window_size, self.window_size) * float('-inf'),
+            diagonal=1
+        ).to(x.device)
 
-        # Apply Multi-Head Attention within each window
-        attn_output, _ = self.mha(batched_x, batched_x, batched_x)  # [batch_size * num_windows, window_size, embed_dim]
+        # 4. 窗口内注意力
+        attn_output, _ = self.mha(
+            query=x_windowed,
+            key=x_windowed,
+            value=x_windowed,
+            attn_mask=mask,
+            need_weights=False
+        )
 
-        # Reshape back to [batch_size, num_windows, window_size, embed_dim]
-        attn_output = attn_output.view(batch_size, -1, window_size, embed_dim)
+        # 5. 恢复形状
+        attn_output = attn_output.reshape(batch_size, num_windows, self.window_size, embed_dim)
+        attn_output = attn_output.reshape(batch_size, padded_seq_len, embed_dim)
 
-        # Reshape back to [batch_size, seq_len, embed_dim]
-        attn_output = attn_output.contiguous().view(batch_size, padded_seq_len, embed_dim)
-
-        # Remove padding
+        # 6. 移除填充
         if pad_size > 0:
             attn_output = attn_output[:, :seq_len, :]
 
@@ -62,9 +75,6 @@ class SpatioTemporalLayer(nn.Module):  # 归一化相似度时空层
 
         # Compute temporal similarity based on temporal information
         temporal_similarity = self.temporal_similarity(temporal_info)
-
-        # print(spatial_similarity.shape)
-        # print(temporal_similarity.shape)
 
         # Combine spatial and temporal similarity
         similarity = spatial_similarity * temporal_similarity

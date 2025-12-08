@@ -53,18 +53,6 @@ user_trajectories_sequences = {user_id: [poi for poi, _ in records] for user_id,
 # print(user_trajectories_sequences.shape)
 
 
-def gen_sparse_H_user(sessions_dict, num_pois, num_users):
-    H = np.zeros(shape=(num_pois, num_users))
-
-    for userID, seq in sessions_dict.items():
-        for poi in seq:
-            H[poi, userID] = 1
-
-    H = sp.csr_matrix(H)
-
-    return H
-
-
 def gen_sparse_H_user_freq(sessions_dict, num_pois, num_users):
     rows, cols, data = [], [], []
 
@@ -82,18 +70,6 @@ def gen_sparse_H_user_freq(sessions_dict, num_pois, num_users):
             data.append(count / seq_len)  # 访问频率
 
     H = sp.csr_matrix((data, (rows, cols)), shape=(num_pois, num_users))
-    return H
-
-
-def gen_sparse_directed_H_poi(users_trajs_dict, num_pois):
-    H = np.zeros(shape=(num_pois, num_pois))
-    for userID, traj in users_trajs_dict.items():
-        for src_idx in range(len(traj) - 1):
-            src_poi = traj[src_idx]
-            tar_poi = traj[src_idx + 1]
-            H[src_poi, tar_poi] = 1
-    H = sp.csr_matrix(H)
-
     return H
 
 
@@ -174,11 +150,6 @@ H_poi_tar = H_poi_src.T
 Deg_H_poi_tar = get_hyper_deg(H_poi_tar)
 HG_poi_tar = Deg_H_poi_tar * H_poi_tar
 
-H_geo_path = os.path.join(dataset_path, 'H_geo_sparse20km.npz')  # 地理距离超图 (L,L)
-H_geo_sparse = sp.load_npz(H_geo_path)
-H_geo = csr_matrix_drop_edge(H_geo_sparse, 1.0)
-Deg_H_geo = get_hyper_deg(H_geo)
-HG_geo = Deg_H_geo * H_geo
 
 H_friend_path = os.path.join(dataset_path, 'friend_visit_freq_sparse.npz')  # 朋友超图
 H_friend_sparse = sp.load_npz(H_friend_path)
@@ -316,40 +287,6 @@ final_user_emb1 = torch.sparse.mm(HG_up_tensor, final_pre_emb1)
 # print(final_user_emb1.shape)
 
 
-# 地理超图
-HG_geo_tensor = torch.tensor(HG_geo.toarray(), dtype=torch.float32)
-
-gate_geo = torch.sigmoid(raw_emb @ w_gate_geo + b_gate_geo)
-poi_emb2_tensor = raw_emb * gate_geo
-# poi_emb2_tensor = raw_emb
-final_pre_emb2 = [poi_emb2_tensor]
-
-# 一层卷积
-pre_emb2 = torch.sparse.mm(HG_geo_tensor, poi_emb2_tensor)  # 超图卷积,源节点->目标节点
-pre_emb2 = pre_emb2 + final_pre_emb2[-1]  # 残差连接
-# pre_emb1 = F.relu(pre_emb1)
-# pre_emb2 = dropout(pre_emb2)
-final_pre_emb2.append(pre_emb2)
-
-# 二层卷积
-pre_emb2 = torch.sparse.mm(HG_geo_tensor, pre_emb2)  # 超图卷积,源节点->目标节点
-pre_emb2 = pre_emb2 + final_pre_emb2[-1]  # 残差连接
-final_pre_emb2.append(pre_emb2)
-
-# 三层卷积
-# pre_emb2 = torch.sparse.mm(HG_geo_tensor, pre_emb2)  # 超图卷积,源节点->目标节点
-# pre_emb2 = pre_emb2 + final_pre_emb2[-1]  # 残差连接
-# final_pre_emb2.append(pre_emb2)
-
-# 四层卷积
-# pre_emb2 = torch.sparse.mm(HG_geo_tensor, pre_emb2)  # 超图卷积,源节点->目标节点
-# pre_emb2 = pre_emb2 + final_pre_emb2[-1]  # 残差连接
-# final_pre_emb2.append(pre_emb2)
-
-final_pre_emb2 = torch.mean(torch.stack(final_pre_emb2), dim=0)  # 取均值
-final_user_emb2 = torch.sparse.mm(HG_up_tensor, final_pre_emb2)
-
-
 # 朋友超图
 HG_friend_tensor = torch.tensor(HG_friend.toarray(), dtype=torch.float32)
 HG_endfri_tensor = torch.tensor(HG_endfri.toarray(), dtype=torch.float32)
@@ -422,24 +359,18 @@ final_user_emb4 = torch.sparse.mm(HG_up_tensor, final_pre_emb4)  # 最后传播�
 
 hg_emb_all = final_user_emb4
 trans_emb_all = final_user_emb1
-geo_emb_all = final_user_emb2
 
 hg_emb_all = F.normalize(hg_emb_all, p=2, dim=1)
 trans_emb_all = F.normalize(trans_emb_all, p=2, dim=1)
-geo_emb_all = F.normalize(geo_emb_all, p=2, dim=1)
 
 
 Hyper_gate = nn.Sequential(nn.Linear(up_dim, 1), nn.Sigmoid())  # 门控机制
 Trans_gate = nn.Sequential(nn.Linear(up_dim, 1), nn.Sigmoid())
-Geo_gate = nn.Sequential(nn.Linear(up_dim, 1), nn.Sigmoid())
 Friend_gate = nn.Sequential(nn.Linear(up_dim, 1), nn.Sigmoid())
 Total_gate = nn.Sequential(nn.Linear(up_dim, 1), nn.Sigmoid())
 
+embedding_result = Total_gate(hg_emb_all) * hg_emb_all + Trans_gate(trans_emb_all) * trans_emb_all
 
-# 综合超图换用户-poi超图
-embedding_result = Total_gate(hg_emb_all) * hg_emb_all + Trans_gate(trans_emb_all) * trans_emb_all + \
-                   Geo_gate(geo_emb_all) * geo_emb_all   # 自适应融合
-# embedding_result = Total_gate(hg_emb_all) * hg_emb_all + Trans_gate(trans_emb_all) * trans_emb_all
 print(embedding_result)
 print(embedding_result.shape)
 
