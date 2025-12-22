@@ -1,4 +1,3 @@
-<img width="1152" height="934" alt="主图" src="https://github.com/user-attachments/assets/6bcc5cde-545c-460b-96a9-a7594a6e848b" /># HST-POI
 HST-POI: Joint Hypergraph and Phased Spatio-Temporal Learning for Next POI Recommendation
 
 <img width="1152" height="934" alt="主图" src="https://github.com/user-attachments/assets/e4c3f754-2ee8-4469-a771-79fb00c2aa31" />
