@@ -1,6 +1,6 @@
 **HST-POI: Joint Hypergraph and Phased Spatio-Temporal Learning for Next POI Recommendation**
 
-In this paper, we propose a Joint Hypergraph Learning and Phased Spatial-Temporal Learning model (HST-POI) for the next POI recommendation. HST-POI integrates hypergraph-based global preference learning, ST-Former-driven phase-aware spatio-temporal modeling and visit time prediction to fuse multi-source context , substantially enhancing the robustness and adaptability of next POI prediction.
+In this paper, we propose a Joint Hypergraph Learning and Phased Spatial-Temporal Learning model (HST-POI) for the next POI recommendation. HST-POI integrates hypergraph-based global preference learning, ST-Former-driven phase-aware spatio-temporal modeling and visit time prediction to fuse multi-source context , substantially enhancing the robustness and adaptability of Next POI Recommendation.
 
 
 &#8226;  We design a **hypergraph learning module** that constructs two distinct hypergraphs to comprehensively model user preferences from personal historical, social, and transitional perspectives. 
